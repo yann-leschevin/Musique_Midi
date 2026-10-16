@@ -9,7 +9,7 @@ pas de framework front-end).
 ## Installation et lancement
 
 ```bash
-git clone git@github.com:yann-leschevin/Musique_Midi.git
+git clone https://github.com/yann-leschevin/Musique_Midi.git
 cd Musique_Midi
 ```
 
