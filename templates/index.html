@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Maestro — Lecteur MIDI</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c6cff'/%3E%3Cstop offset='1' stop-color='%232dd4bf'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cpath d='M12 22V9l11-2v13' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='9.5' cy='22' r='3' fill='white'/%3E%3Ccircle cx='20.5' cy='20' r='3' fill='white'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c6cff"/>
+      <stop offset="1" stop-color="#2dd4bf"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.6" fill="currentColor"/><circle cx="17.5" cy="16" r="2.6" fill="currentColor"/></svg>
+    </span>
+    <div>
+      <h1>Maestro</h1>
+      <p class="tagline">Lecteur MIDI · bibliothèque classique</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="badge" id="libraryBadge" title="Taille de la bibliothèque">…</span>
+    <span class="badge badge-muted" id="backendBadge" title="Backend Python utilisé">backend&nbsp;: …</span>
+    <span class="badge badge-muted" id="healthBadge">serveur&nbsp;: …</span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ============================ Bibliothèque ============================ -->
+  <aside class="panel sidebar" aria-label="Bibliothèque">
+    <section class="block block-library">
+      <div class="block-head">
+        <h2>Bibliothèque</h2>
+        <button class="icon-btn" id="btnRefresh" type="button" title="Rafraîchir la liste" aria-label="Rafraîchir la liste">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="tree-toolbar">
+        <label class="search">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="search" id="treeSearch" placeholder="Rechercher un artiste, une œuvre…"
+                 aria-label="Filtrer la liste par artiste ou titre">
+        </label>
+        <div class="tree-actions">
+          <button class="chip" id="btnExpandAll" type="button">Tout déplier</button>
+          <button class="chip" id="btnCollapseAll" type="button">Tout replier</button>
+        </div>
+      </div>
+      <div class="tree" id="midiTree" role="tree" aria-label="Musiques classées par artiste"></div>
+      <p class="empty" id="midiListEmpty" hidden>Aucun fichier MIDI disponible pour le moment.</p>
+      <p class="hint" id="midiListWarning" hidden></p>
+    </section>
+
+    <section class="block block-import">
+      <h2>Importer</h2>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button"
+           aria-label="Sélectionner un fichier MIDI">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p class="dz-title">Déposez un fichier <code>.mid</code></p>
+        <p class="hint">ou cliquez pour parcourir · max <span id="maxSize">5&nbsp;Mo</span></p>
+      </div>
+      <input type="file" id="fileInput" accept=".mid,.midi,audio/midi" hidden>
+      <div class="row">
+        <button class="btn btn-ghost" id="btnChoose" type="button">Parcourir…</button>
+        <button class="btn btn-accent" id="btnUpload" type="button" disabled
+                title="Envoyer le fichier sélectionné dans le dossier midis/">Ajouter à la bibliothèque</button>
+      </div>
+    </section>
+  </aside>
+
+  <!-- =============================== Scène =============================== -->
+  <section class="panel stage" aria-label="Lecteur">
+    <div class="now-playing" id="nowPlaying" tabindex="-1"
+         aria-label="Zone de dépôt : fichier chargé">
+      <div class="cover" aria-hidden="true" id="cover">
+        <span class="eq"><i></i><i></i><i></i><i></i></span>
+      </div>
+      <div class="np-text">
+        <p class="label">En lecture</p>
+        <h2 id="trackTitle">Aucun fichier chargé</h2>
+        <p class="np-artist" id="trackArtist">Choisissez une œuvre dans la bibliothèque</p>
+        <p class="drop-hint" id="dropHint">Glissez ici un titre ou un fichier pour le lancer</p>
+      </div>
+      <span class="state" id="playerState">arrêt</span>
+    </div>
+
+    <div class="roll-wrap" id="rollWrap" tabindex="0" role="slider"
+         aria-label="Position de lecture : cliquez ou faites glisser le trait"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <canvas id="roll" width="1000" height="340"></canvas>
+      <div class="roll-tip" id="rollTip" hidden>0:00</div>
+      <div class="roll-empty" id="rollEmpty">
+        <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M9 18V5l11-2v13" fill="none" stroke="url(#brandGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.6" fill="none" stroke="url(#brandGrad)" stroke-width="1.6"/><circle cx="17.5" cy="16" r="2.6" fill="none" stroke="url(#brandGrad)" stroke-width="1.6"/></svg>
+        <p>Le musicogramme apparaîtra ici.</p>
+        <p class="hint">Glissez-y un titre de la bibliothèque pour le lancer.</p>
+        <p class="hint">Cliquez ou faites glisser le trait lumineux pour avancer ou revenir.</p>
+      </div>
+    </div>
+
+    <div class="transport">
+      <div class="times">
+        <span id="timeCurrent">0:00</span><span class="sep">/</span><span id="timeTotal">0:00</span>
+      </div>
+      <div class="transport-buttons">
+        <button class="tbtn" id="btnStop" type="button" disabled
+                title="Arrêt : coupe le son et revient au début (touche S)" aria-label="Arrêt">
+          <svg viewBox="0 0 24 24" width="18" height="18"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
+        </button>
+        <button class="tbtn tbtn-main" id="btnPlay" type="button" disabled
+                title="Lecture (Espace)" aria-label="Lecture">
+          <svg viewBox="0 0 24 24" width="24" height="24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" fill="currentColor"/></svg>
+        </button>
+        <button class="tbtn" id="btnPause" type="button" disabled
+                title="Pause (Espace) — la position est conservée" aria-label="Pause">
+          <svg viewBox="0 0 24 24" width="18" height="18"><rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></svg>
+        </button>
+        <button class="tbtn" id="btnResume" type="button" disabled
+                title="Reprendre là où la pause a eu lieu" aria-label="Reprendre">
+          <svg viewBox="0 0 24 24" width="18" height="18"><rect x="4" y="5" width="3.4" height="14" rx="1" fill="currentColor"/><path d="M10 6.2v11.6a.9.9 0 0 0 1.37.77l9.1-5.8a.9.9 0 0 0 0-1.54l-9.1-5.8A.9.9 0 0 0 10 6.2Z" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <label class="volume" title="Volume">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input type="range" id="volume" min="0" max="100" value="80" aria-label="Volume">
+      </label>
+    </div>
+
+    <div class="options">
+      <label class="opt">
+        <span>Son</span>
+        <div class="opt-field">
+          <span class="opt-icon" id="soundIcon" aria-hidden="true"></span>
+          <select id="sound" title="Timbre utilisé pour la synthèse">
+            <option value="auto" selected>Auto (instrument du fichier)</option>
+          </select>
+        </div>
+      </label>
+      <label class="opt">
+        <span>Forme d'onde</span>
+        <div class="opt-field">
+          <span class="opt-icon" id="waveIcon" aria-hidden="true"></span>
+          <select id="waveform">
+            <option value="auto" selected>Auto (selon le son)</option>
+            <option value="sine">Sinus (doux)</option>
+            <option value="triangle">Triangle (clé)</option>
+            <option value="square">Carré (orgue)</option>
+            <option value="sawtooth">Dent de scie (acide)</option>
+            <option value="saw-inv">Dent de scie inversée</option>
+            <option value="pulse">Impulsion 25 % (nasillard)</option>
+            <option value="organ">Orgue (jeux d'harmoniques)</option>
+            <option value="hollow">Creuse (harmoniques impaires)</option>
+            <option value="metallic">Métallique (brillante)</option>
+          </select>
+        </div>
+      </label>
+      <label class="opt opt-speed">
+        <span>Vitesse <output id="speedValue" for="speed">1,00&times;</output></span>
+        <input type="range" id="speed" min="25" max="200" step="5" value="100"
+               aria-label="Vitesse de lecture">
+      </label>
+    </div>
+
+    <details class="info" id="fileInfo" hidden>
+      <summary>Détails du fichier</summary>
+      <dl id="fileMeta"></dl>
+      <ul class="warn-list" id="fileWarnings"></ul>
+    </details>
+
+    <p class="shortcuts">
+      <kbd>Espace</kbd> lecture / pause · <kbd>S</kbd> arrêt ·
+      <kbd>←</kbd> <kbd>→</kbd> −5 s / +5 s sur le musicogramme ·
+      clic ou glisser du trait pour se déplacer
+    </p>
+  </section>
+</main>
+
+<div class="messages" id="messages" aria-live="polite" role="status"></div>
+
+<footer class="footer">
+  <details class="about">
+    <summary>À propos et formats pris en charge</summary>
+    <div class="cols">
+      <div>
+        <h3 class="ok">Pris en charge</h3>
+        <ul>
+          <li>Standard MIDI File <strong>format 0</strong> et <strong>format 1</strong>, tempo et changements de tempo</li>
+          <li>Notes <em>note on</em> / <em>note off</em> (vitesse 0, statut courant), pistes multiples, programmes</li>
+          <li>Division en pulses par noire et en <strong>SMPTE</strong></li>
+          <li>Synthèse Web Audio : <strong>15 sons</strong>, <strong>9 formes d'onde</strong>, vitesse de 0,25&times; à 2&times;</li>
+          <li>Glisser-déposer : disque → import, bibliothèque → « En lecture » ou musicogramme (lecture automatique)</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="ko">Limites</h3>
+        <ul>
+          <li>SMF <strong>format 2</strong> refusé ; <code>sysex</code> ignorés</li>
+          <li>Percussions (canal 10) jouées comme des notes</li>
+          <li>Pas de banque d'échantillons : timbres synthétisés</li>
+          <li>Fichiers de plus de 5&nbsp;Mo refusés</li>
+        </ul>
+      </div>
+    </div>
+    <p class="hint">Œuvres du dossier <code>midis/</code> : domaine public / CC0 — sources détaillées dans <code>midis/SOURCES_MIDI.md</code>.</p>
+  </details>
+</footer>
+
+<script src="/static/js/midi-parser.js"></script>
+<script src="/static/js/player.js"></script>
+<script src="/static/js/pianoroll.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
