@@ -1,0 +1,15 @@
+# Pas de listing des dossiers
+Options -Indexes
+DirectoryIndex index.php
+
+# En-têtes de sécurité
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "same-origin"
+    Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# Fichiers cachés (.git, .env...) jamais servis
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

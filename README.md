@@ -1,4 +1,41 @@
-# Lecteur MIDI — Flask + Web Audio
+# Maestro — lecteur MIDI
+
+> 🌐 **Essayer en ligne : <https://leschevin.com/projets/musique-midi/>**
+>
+> 🤝 **Version PHP et mise en ligne réalisées par Yann Leschevin ([@yann-leschevin](https://github.com/yann-leschevin)) en collaboration avec Claude (Anthropic), via [Claude Code](https://claude.com/claude-code)** — novembre 2026.
+
+Lecteur de fichiers MIDI dans le navigateur (Web Audio) avec musicogramme et une bibliothèque d'œuvres classiques libres de droits.
+
+Ce dépôt contient **deux versions** du projet :
+
+| Partie | Dossier | Rôle | Lancer en local |
+|--------|---------|------|-----------------|
+| 🐍 **Python** (Flask) | racine du dépôt | version d'origine, à lancer sur son ordinateur | `./source.sh` (ou `python3 app.py`) puis http://localhost:5009/ |
+| 🐘 **PHP** | [`php/`](php/) | version publiée sur [leschevin.com](https://leschevin.com/projets/musique-midi/) (hébergement OVH) | `cd php && php -S 127.0.0.1:8080 -t www` |
+
+---
+
+## 🐘 Partie PHP — version en ligne
+
+👉 <https://leschevin.com/projets/musique-midi/> · documentation détaillée : [`php/README.md`](php/README.md)
+
+- `php/www/api/` remplace les routes Flask : `health.php`, `midis.php`, `midi.php?name=…`, `upload.php` ;
+- même classement par compositeur que `app.py` (vérifié : sortie identique sur les 341 fichiers) ;
+- l'envoi de fichiers par les visiteurs est **désactivé** en ligne (`UPLOAD_ENABLED` dans `php/www/lib/config.php`) ;
+- 341 MIDI dont la provenance et la licence (domaine public / CC0) sont documentées dans `php/SOURCES_MIDI.md`.
+
+Tests : `bash php/tests/test.sh`.
+
+Le dossier `php/www/` est exactement ce qui est envoyé sur l'hébergement (dans `www/projets/musique-midi/`).
+
+---
+
+## 🐍 Partie Python — version d'origine
+
+Le code Python n'a pas été modifié par le portage : il reste à la racine du dépôt.
+Sa documentation d'origine suit.
+
+### Lecteur MIDI — Flask + Web Audio
 
 Application web de lecture de fichiers MIDI (`.mid` / `.midi`), écrite en
 **Python/Flask** côté serveur et en **HTML/CSS/JavaScript natifs** côté client.
@@ -6,7 +43,7 @@ La lecture sonore utilise exclusivement l'**API Web Audio** du navigateur :
 aucune dépendance externe n'est installée (pas de `pip install`, pas de Node.js,
 pas de framework front-end).
 
-## Installation et lancement
+#### Installation et lancement
 
 ```bash
 git clone https://github.com/yann-leschevin/Musique_Midi.git
@@ -44,7 +81,7 @@ Variables d'environnement optionnelles : `HOST` (défaut `127.0.0.1`), `PORT`
 > Python. L'application fonctionne donc **sans aucune dépendance**.
 > Le badge « backend » en haut de la page indique le mode réellement utilisé.
 
-## Fonctionnalités
+#### Fonctionnalités
 
 - Interface « Maestro » (session 5) : thème sombre studio, bibliothèque à gauche,
   scène centrale (en lecture, musicogramme, transport à icônes, réglages).
@@ -89,7 +126,7 @@ Variables d'environnement optionnelles : `HOST` (défaut `127.0.0.1`), `PORT`
   volumineux, extension refusée, dossier absent, serveur injoignable —
   l'application ne plante jamais pour autant (messages affichés en français).
 
-## Sous-ensemble MIDI pris en charge (honnêteté du lecteur)
+#### Sous-ensemble MIDI pris en charge (honnêteté du lecteur)
 
 Analyse écrite à la main dans `static/js/midi-parser.js` :
 
@@ -106,7 +143,7 @@ Analyse écrite à la main dans `static/js/midi-parser.js` :
 Le serveur applique la même limite à l'envoi : en-tête `MThd`, format 0/1,
 présence des blocs `MTrk`, taille ≤ 5 Mo.
 
-## Sécurité des routes de fichiers
+#### Sécurité des routes de fichiers
 
 - Extensions autorisées (whitelist) : `.mid`, `.midi` uniquement.
 - Noms de fichiers : regex stricte, refus des chemins (`/`, `\`, `..`), octets
@@ -117,7 +154,7 @@ présence des blocs `MTrk`, taille ≤ 5 Mo.
 - Entête `X-Content-Type-Options: nosniff`, méthode `DELETE` refusée (405),
   erreurs API renvoyées en JSON avec le bon code HTTP.
 
-## Arborescence
+#### Arborescence
 
 ```
 app.py                    Serveur Flask (routes, sécurité, validation MIDI, tri des artistes)
@@ -140,7 +177,7 @@ README.md                 Ce fichier
 ETAT_PROJET.md            Journal de travail (sessions 1 à 6)
 ```
 
-## Bibliothèque MIDI (`midis/`) : d'où viennent les fichiers ?
+#### Bibliothèque MIDI (`midis/`) : d'où viennent les fichiers ?
 
 Les fichiers du dossier `midis/` sont **libres de droits** : chacun est
 accompagné, dans `midis/SOURCES_MIDI.md`, de son œuvre, de son compositeur, de
@@ -162,7 +199,7 @@ python3 fetch_composers_20.py --dry-run       # affiche ce qui manque (5 grands 
 python3 fetch_composers_all20.py --dry-run    # idem pour les 19 autres musiciens
 ```
 
-## Vérifications locales (sans laisser de serveur tourner)
+#### Vérifications locales (sans laisser de serveur tourner)
 
 ```bash
 # 1. syntaxe Python
@@ -187,7 +224,7 @@ const u=new Uint8Array(b.length);u.set(b);
 console.log(MidiFile.parse(u.buffer));'
 ```
 
-## Limites restantes
+#### Limites restantes
 
 - L'interface a été validée dans Chrome headless (session 5) et le parseur par
   Node.js, mais le son n'a pas été écouté dans l'environnement de vérification ;
