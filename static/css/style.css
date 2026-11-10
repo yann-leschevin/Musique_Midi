@@ -580,8 +580,32 @@ kbd {
 .tbtn-main svg { margin-left: 3px; }
 #btnStop:hover:not(:disabled) { color: var(--danger); }
 
-.volume { display: flex; align-items: center; justify-content: flex-end; gap: .55rem; color: var(--muted); }
-.volume input { width: 120px; }
+/* Volume mis en valeur (souvent trop fort au lancement), aux couleurs du logo */
+.volume {
+  display: flex; align-items: center; justify-content: flex-end; gap: .6rem;
+  justify-self: end;
+  padding: .45rem .85rem;
+  border: 1px solid rgba(91, 140, 255, .65);
+  border-radius: 999px;
+  background: rgba(91, 140, 255, .14);
+  color: #8fb0ff;
+  box-shadow: 0 0 20px -6px rgba(91, 140, 255, .7);
+}
+/* Piste bien visible : partie remplie en dégradé du logo, reste en gris clair.
+   --vol est mis à jour par app.js (pourcentage du volume). */
+.volume input {
+  --vol: 50%;
+  width: 170px;
+  height: 8px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #7c6cff 0%, #5b8cff 60%, #2dd4bf 100%) 0 0 / var(--vol) 100% no-repeat,
+              rgba(255, 255, 255, .28);
+}
+.volume input::-moz-range-track { background: transparent; height: 8px; }
+.volume input::-moz-range-progress { background: transparent; }
+.volume input::-webkit-slider-thumb { width: 20px; height: 20px; box-shadow: 0 0 0 4px rgba(91, 140, 255, .5); }
+.volume input::-moz-range-thumb { width: 20px; height: 20px; box-shadow: 0 0 0 4px rgba(91, 140, 255, .5); }
+.volume-value { min-width: 3.2em; text-align: right; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
 
 /* curseurs (volume, vitesse) */
 input[type="range"] {
@@ -767,6 +791,21 @@ input[type="range"]::-moz-range-progress { background: var(--grad); height: 4px;
 .cols h3.ok { color: var(--ok); }
 .cols h3.ko { color: var(--danger); }
 .cols ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .3rem; color: var(--text-2); }
+
+/* Grand écran : le lecteur a la même hauteur que la bibliothèque ;
+   le musicogramme prend toute la place restante. */
+@media (min-width: 1001px) {
+  .stage {
+    height: calc(100vh - 100px);
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .stage > * { flex-shrink: 0; }
+  .stage > .roll-wrap { flex: 1 1 auto; min-height: 200px; }
+  .stage #roll { position: absolute; inset: 0; width: 100%; height: 100%; }
+}
 
 /* ------------------------------- responsive ------------------------------ */
 @media (max-width: 1000px) {

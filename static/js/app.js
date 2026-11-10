@@ -1254,8 +1254,26 @@
       }
     });
 
+    /* Volume : 50 % par défaut, puis la dernière valeur choisie est retenue */
+    function applyVolume(save) {
+      var v = Number(els.volume.value);
+      state.player.setVolume(v / 100);
+      var out = document.getElementById("volumeValue");
+      if (out) out.textContent = v + " %";
+      els.volume.style.setProperty("--vol", v + "%");
+      if (save) {
+        try { localStorage.setItem("maestro_volume", String(v)); } catch (e) { /* sans importance */ }
+      }
+    }
+    try {
+      var savedVolume = localStorage.getItem("maestro_volume");
+      if (savedVolume !== null && /^\d{1,3}$/.test(savedVolume) && Number(savedVolume) <= 100) {
+        els.volume.value = savedVolume;
+      }
+    } catch (e) { /* stockage local indisponible */ }
+    applyVolume(false);
     els.volume.addEventListener("input", function () {
-      state.player.setVolume(Number(els.volume.value) / 100);
+      applyVolume(true);
     });
     els.waveform.addEventListener("change", function () {
       state.player.setWaveform(els.waveform.value);
